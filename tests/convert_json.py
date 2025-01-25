@@ -18,8 +18,8 @@ with open(args.json, 'r') as file:
 
 filtered_data = []
 for sample in data:
-    value_1 = data[0].text.replace("%", "").replace("<", "").strip()
-    value_2 = data[1].text.replace("%", "").replace("<", "").strip()
+    value_1 = sample[0].replace("%", "").replace("<", "").strip()
+    value_2 = sample[1].replace("%", "").replace("<", "").strip()
     filtered_data.append(
         [
             float(value_1) if value_1 != "" else None,

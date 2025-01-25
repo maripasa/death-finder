@@ -10,7 +10,7 @@ parser.add_argument("-d", "--debug", action="store_true", help="Enables debug mo
 parser.add_argument(
     "--wait",
     type=float,
-    default=0.5,
+    default=10,
     help="Wait time in seconds"
 )
 

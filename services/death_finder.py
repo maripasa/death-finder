@@ -75,19 +75,36 @@ class DeathFinder:
         """Performs the Framingham calculation using Selenium."""
         data = self.extract_csv_for_framingham()
         result = []
+        
+        progress_bar = ProgressBar()
 
         try:
             self.driver.get(FRAMINGHAM_URL)
             self.driver.execute_script("document.body.style.zoom='0.6'")
 
-            ProgressBar.update(0, len(data))
+            progress_bar.update(0, len(data))
+
             for i, sample in enumerate(data):
+
+                progress_bar.sample_time()
+
                 if not sample["valid"]:
                     result.append([None, None])
                     continue
 
                 self._fill_inputs_framingham(sample)
                 self._click_buttons_framingham(sample)
+                
+                try:
+                    WebDriverWait(self.driver, self.wait).until(
+                        EC.visibility_of_element_located((By.CSS_SELECTOR, "[class*='calc_loading']"))
+                    )
+
+                    WebDriverWait(self.driver, self.wait).until(
+                        EC.invisibility_of_element_located((By.CSS_SELECTOR, "[class*='calc_loading']"))
+                    )
+                except Exception as e:
+                    logging.warning(f"Failed to find calc_loading {e}")
 
                 h2_1 = WebDriverWait(self.driver, self.wait).until(
                     EC.visibility_of_element_located((By.CSS_SELECTOR, "[class*='calc_result-list'] div:nth-child(1) h2"))
@@ -106,7 +123,7 @@ class DeathFinder:
                     ]
                 )
 
-                ProgressBar.update(i + 1, len(data))
+                progress_bar.update(i + 1, len(data))
 
         except Exception as e:
             logging.error(f"Error during scraping: {e}", exc_info=True)
@@ -148,7 +165,10 @@ class DeathFinder:
         """Runs the appropriate calculator based on the user's choice."""
         if self.calculator == "framingham":
             self.calculate_framingham()
-        elif self.calculator == "lin":
+            return
+
+        if self.calculator == "lin":
             self.calculate_lin()
-        else:
-            raise ValueError(f"Invalid calculator: {self.calculator}")
+            return
+
+        raise ValueError(f"Invalid calculator: {self.calculator}")
