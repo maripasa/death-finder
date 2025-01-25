@@ -34,6 +34,7 @@ class DeathFinder:
         self.output_path: str = args.output
         self.is_only_framingham: bool = args.framingham
         self.is_only_lin: bool = args.lin
+        self.output_file = self.determine_output_file()
 
         if args.debug:
             logging.basicConfig(
@@ -128,10 +129,9 @@ class DeathFinder:
             logging.debug(f"Clicked button {button_name} with value {sample[button_name]}")
 
     def _write_output(self, result: List[List[str]]):
-        output_file = self.determine_output_file()
-        with open(output_file, 'w') as f:
+        with open(self.output_file, 'w') as f:
             json.dump(result, f)
-        logging.info(f"Results written to {output_file}")
+        logging.info(f"Results written to {self.output_file}")
 
     def check_csv_path(self):
         if not (self.input_path.endswith(".csv") and os.path.exists(self.input_path)):
