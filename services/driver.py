@@ -4,8 +4,9 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 
 class Driver: 
+    """ ChromeDriver instance generator. """
+
     def __init__(self, debug: bool = False):
-        """ ChromeDriver instance generator. """
         options = Options()
         
         if debug:

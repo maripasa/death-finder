@@ -1,15 +1,13 @@
-import csv
-import json
 import logging
-import os
-import time
-from typing import List, Dict, Optional, Callable
+from typing import List, Dict
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 from services.driver import Driver
+from services.progress import ProgressBar
+from services.document import read_csv, validate_csv_path, determine_output_path, write_json
 
 FRAMINGHAM_URL = "https://www.mdcalc.com/calc/38/framingham-risk-score-hard-coronary-heart-disease"
 FRAMINGHAM_NECESSARY_DATA = [
@@ -28,52 +26,6 @@ FRAMINGHAM_VALIDATION_RULES = [
     lambda line: 30 < float(line["PRESSAO_ARTERIAL_PAS"]) < 300,
 ]
 
-
-class DocumentHandler:
-    """Handles file operations such as validation, reading, and writing."""
-
-    @staticmethod
-    def validate_csv_path(input_path: str) -> None:
-        """Validates the CSV file path."""
-        if not input_path.endswith(".csv"):
-            raise ValueError(f"Invalid file type: {input_path}. Expected a .csv file.")
-        if not os.path.exists(input_path):
-            raise FileNotFoundError(f"File not found: {input_path}")
-
-    @staticmethod
-    def determine_output_path(output_path: str) -> str:
-        """Determines the output file path. Defaults to './output.json' if output_path is a directory."""
-        if os.path.isdir(output_path):
-            return os.path.join(output_path, "output.json")
-        if not output_path.endswith(".json"):
-            raise ValueError(f"Output path must be a JSON file: {output_path}")
-        return output_path
-
-    @staticmethod
-    def read_csv(input_path: str) -> List[Dict]:
-        """Reads a CSV file and returns its contents as a list of dictionaries."""
-        with open(input_path, "r", encoding="utf-8") as file:
-            return list(csv.DictReader(file))
-
-    @staticmethod
-    def write_json(data: List, output_path: str) -> None:
-        """Writes data to a JSON file."""
-        with open(output_path, "w") as file:
-            json.dump(data, file, indent=4)
-        logging.info(f"Results written to {output_path}")
-
-
-class ProgressBar:
-    """Displays a progress bar in the console."""
-
-    @staticmethod
-    def update(progress: int, total: int) -> None:
-        """Updates the progress bar."""
-        percent = 100 * (progress / float(total))
-        bar = chr(9608) * int(percent) + "-" * (100 - int(percent))
-        print(f"\r|{bar}| {percent:.2f}% ( {progress} / {total} )", end="\r")
-
-
 class DeathFinder:
     """Handles the calculation logic for Framingham and LIN calculators."""
 
@@ -82,7 +34,7 @@ class DeathFinder:
         self.input_path: str = args.csv
         self.calculator: str = args.calculator
         self.output_path: str = args.output
-        self.output_file = DocumentHandler.determine_output_path(self.output_path)
+        self.output_file = determine_output_path(self.output_path)
         self.wait = args.wait
         self.last_pressed = {}
 
@@ -95,8 +47,8 @@ class DeathFinder:
 
     def extract_csv_for_framingham(self) -> List[Dict]:
         """Extracts and validates data from the CSV file for Framingham calculations."""
-        DocumentHandler.validate_csv_path(self.input_path)
-        data = DocumentHandler.read_csv(self.input_path)
+        validate_csv_path(self.input_path)
+        data = read_csv(self.input_path)
 
         processed_data = []
         for line in data:
@@ -131,18 +83,16 @@ class DeathFinder:
             ProgressBar.update(0, len(data))
             for i, sample in enumerate(data):
                 if not sample["valid"]:
-                    result.append(["", ""])
+                    result.append([None, None])
                     continue
 
                 self._fill_inputs_framingham(sample)
                 self._click_buttons_framingham(sample)
 
-                time.sleep(self.wait)
-
-                h2_1 = WebDriverWait(self.driver, 10).until(
+                h2_1 = WebDriverWait(self.driver, self.wait).until(
                     EC.visibility_of_element_located((By.CSS_SELECTOR, "[class*='calc_result-list'] div:nth-child(1) h2"))
                 )
-                h2_2 = WebDriverWait(self.driver, 10).until(
+                h2_2 = WebDriverWait(self.driver, self.wait).until(
                     EC.visibility_of_element_located((By.CSS_SELECTOR, "[class*='calc_result-list'] div:nth-child(2) h2"))
                 )
                 
@@ -164,13 +114,13 @@ class DeathFinder:
         finally:
             self.driver.quit()
 
-        DocumentHandler.write_json(result, self.output_file)
+        write_json(result, self.output_file)
 
     def _fill_inputs_framingham(self, sample: Dict) -> None:
         """Fills input fields on the Framingham calculator page."""
         inputs = ["age", "cholesterol", "hdl_cholesterol", "systolic_bp"]
         for input_name in inputs:
-            element = WebDriverWait(self.driver, 10).until(
+            element = WebDriverWait(self.driver, self.wait).until(
                 EC.presence_of_element_located((By.NAME, input_name))
             )
             element.clear()
@@ -184,7 +134,7 @@ class DeathFinder:
             if self.last_pressed.get(button_name, "") == sample[button_name]:
                 continue
 
-            element = WebDriverWait(self.driver, 10).until(
+            element = WebDriverWait(self.driver, self.wait).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, f"input[name='{button_name}'][value='{sample[button_name]}']"))
             )
             self.driver.execute_script("arguments[0].click();", element)
