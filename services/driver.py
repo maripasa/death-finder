@@ -5,10 +5,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 class Driver: 
     def __init__(self, debug: bool = False):
-        """
-        Initialize the headless browser.
-        :param driver_path: Path to the ChromeDriver executable.
-        """
+        """ ChromeDriver instance generator. """
         options = Options()
         
         if debug:
