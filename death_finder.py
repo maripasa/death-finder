@@ -6,19 +6,43 @@ parser = argparse.ArgumentParser(
     description="Bulk Scraper for Framingham and LIN Calculator"
 )
 
-parser.add_argument("csv", help="Path to the csv containing the diagnostics")
+parser.add_argument("-d", "--debug", action="store_true", help="Enables debug mode")
 parser.add_argument(
+    "--wait",
+    type=float,
+    default=0.5,
+    help="Wait time in seconds"
+)
+
+subparsers = parser.add_subparsers(dest="calculator", required=True)
+
+framingham_parser = subparsers.add_parser("framingham", help="Run the Framingham calculator")
+framingham_parser.add_argument(
+    "csv",
+    nargs="?",
+    default=".",
+    help="Path to the csv containing the diagnostics"
+)
+framingham_parser.add_argument(
     "output",
     nargs="?",
     default=".",
-    help="Path to the output file or folder (default: current directory)"
+    help="Path to the output file or folder"
 )
 
-parser.add_argument("-d", "--debug", action="store_true", help="Enables debug mode")
-
-calculator_group = parser.add_mutually_exclusive_group(required=True)
-calculator_group.add_argument("-f", "--framingham", action="store_true", help="Uses only the Framingham calculator")
-calculator_group.add_argument("-l", "--lin", action="store_true", help="Uses only the LIN calculator")
+lin_parser = subparsers.add_parser("lin", help="Run the LIN calculator")
+lin_parser.add_argument(
+    "csv",
+    nargs="?",
+    default=".",
+    help="Path to the csv containing the diagnostics"
+)
+lin_parser.add_argument(
+    "output",
+    nargs="?",
+    default=".",
+    help="Path to the output file or folder"
+)
 
 args = parser.parse_args()
 
