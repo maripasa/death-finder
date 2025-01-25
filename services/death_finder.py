@@ -48,9 +48,8 @@ class DeathFinder:
     def __init__(self, args):
         self.driver = Driver(debug=args.debug).driver
         self.input_path: str = args.csv
+        self.calculator: str = args.calculator
         self.output_path: str = args.output
-        self.is_only_framingham: bool = args.framingham
-        self.is_only_lin: bool = args.lin
         self.output_file = determine_output_file(self.output_path)
         self.wait = args.wait
 
@@ -160,8 +159,8 @@ class DeathFinder:
         pass
 
     def calculate(self) -> None:
-        if self.is_only_lin:
-            self.calculate_lin()
-        elif self.is_only_framingham:
+        if self.calculator == "framingham":
             self.calculate_framingham()
-
+        if self.calculator == "lin":
+            self.calculate_lin()
+        raise ValueError("Not existing calculator.")

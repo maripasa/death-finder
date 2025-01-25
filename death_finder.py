@@ -14,34 +14,22 @@ parser.add_argument(
     help="Wait time in seconds"
 )
 
-subparsers = parser.add_subparsers(dest="calculator", required=True)
-
-framingham_parser = subparsers.add_parser("framingham", help="Run the Framingham calculator")
-framingham_parser.add_argument(
-    "csv",
-    nargs="?",
-    default=".",
-    help="Path to the csv containing the diagnostics"
+parser.add_argument(
+    "calculator",
+    choices=["framingham", "lin"],
+    help="Type of calculator to run (framingham or lin)"
 )
-framingham_parser.add_argument(
+
+parser.add_argument(
+    "csv",
+    help="Path to the CSV containing the diagnostics"
+)
+
+parser.add_argument(
     "output",
     nargs="?",
     default=".",
-    help="Path to the output file or folder"
-)
-
-lin_parser = subparsers.add_parser("lin", help="Run the LIN calculator")
-lin_parser.add_argument(
-    "csv",
-    nargs="?",
-    default=".",
-    help="Path to the csv containing the diagnostics"
-)
-lin_parser.add_argument(
-    "output",
-    nargs="?",
-    default=".",
-    help="Path to the output file or folder"
+    help="Path to the output file or folder (defaults to current directory)"
 )
 
 args = parser.parse_args()
