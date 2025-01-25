@@ -3,10 +3,10 @@ from services.driver import Driver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import csv
-import sys
 import os
 import json
 import logging
+import time
 from typing import List, Dict
 
 # Constants
@@ -72,6 +72,9 @@ class DeathFinder:
 
         try:
             self.driver.get(FRAMINGHAM_URL)
+            
+            self.driver.execute_script("document.body.style.zoom='0.6'")
+
             for sample in data:
                 if not sample["valid"]:
                     result.append(["", ""])
@@ -79,6 +82,8 @@ class DeathFinder:
 
                 self._fill_inputs_framingham(sample)
                 self._click_buttons_framingham(sample)
+
+                time.sleep(1)
 
                 h2_1 = WebDriverWait(self.driver, 10).until(
                     EC.visibility_of_element_located((By.CSS_SELECTOR, "[class*='calc_result-list'] div:nth-child(1) h2"))
