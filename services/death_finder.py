@@ -10,15 +10,32 @@ from services.progress import ProgressBar
 from services.document import read_csv, validate_csv_path, determine_output_path, write_json
 
 FRAMINGHAM_URL = "https://www.mdcalc.com/calc/38/framingham-risk-score-hard-coronary-heart-disease"
-FRAMINGHAM_NECESSARY_DATA = [
-    "person_age_years",
-    "sex",
-    "smoking",
-    "COLESTEROL_TOTAL",
-    "HDL",
-    "PRESSAO_ARTERIAL_PAS",
-    "regular_use_of_medication",
-]
+
+"""
+CHANGE THE FOLLOWING TABLE TO FIT YOUR DATASET
+"""
+
+FRAMINGHAM_INPUTS = {
+    "age": "person_age_years",
+    "cholesterol": "COLESTEROL_TOTAL",
+    "hdl_cholesterol": "HDL",
+    "systolic_bp" : "PRESSAO_ARTERIAL_PAS",
+}
+FRAMINGHAM_BUTTONS = {
+    "sex": {
+        "alias": "sex",
+        "uppercase_truth_value": "MASCULINO"
+        },
+    "smoker": {
+        "alias": "smoking",
+        "uppercase_truth_value": "TRUE"
+        },
+    "blood_pressure": {
+        "alias": "regular_use_of_medication",
+        "uppercase_truth_value": "TRUE"
+        },
+}
+
 FRAMINGHAM_VALIDATION_RULES = [
     lambda line: 30 < float(line["person_age_years"]) < 79,
     lambda line: 40 < float(line["COLESTEROL_TOTAL"]) < 1000,
@@ -52,20 +69,22 @@ class DeathFinder:
 
         processed_data = []
         for line in data:
-            valid = all(line[key] != "" for key in FRAMINGHAM_NECESSARY_DATA) and all(
-                rule(line) for rule in FRAMINGHAM_VALIDATION_RULES
+            valid = all(line[key] != "" for key in {value for value in FRAMINGHAM_BUTTONS.keys()}
+                        .union({value for value in FRAMINGHAM_INPUTS.keys()})) and \
+                        all(rule(line) for rule in FRAMINGHAM_VALIDATION_RULES
             )
+            
+            buttons = {
+                key: str(int(line[FRAMINGHAM_BUTTONS[key]["alias"]].upper() == FRAMINGHAM_BUTTONS[key]["uppercase_truth_value"]))
+                for key in FRAMINGHAM_BUTTONS.keys()
+            }
+            inputs = {key: line[FRAMINGHAM_INPUTS[key]] for key in FRAMINGHAM_INPUTS.keys()}
 
             processed_data.append(
                 {
                     "valid": valid,
-                    "age": line["person_age_years"],
-                    "sex": "1" if line["sex"].upper() == "MASCULINO" else "0",
-                    "smoker": "1" if line["smoking"].upper() == "TRUE" else "0",
-                    "cholesterol": line["COLESTEROL_TOTAL"],
-                    "hdl_cholesterol": line["HDL"],
-                    "systolic_bp": line["PRESSAO_ARTERIAL_PAS"],
-                    "blood_pressure": "1" if line["regular_use_of_medication"].upper() == "TRUE" else "0",
+                    **buttons,
+                    **inputs,
                 }
             )
 
@@ -103,6 +122,7 @@ class DeathFinder:
                     WebDriverWait(self.driver, self.wait).until(
                         EC.invisibility_of_element_located((By.CSS_SELECTOR, "[class*='calc_loading']"))
                     )
+                    
                 except Exception as e:
                     logging.warning(f"Failed to find calc_loading {e}")
 
