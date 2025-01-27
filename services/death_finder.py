@@ -96,7 +96,7 @@ class DeathFinder:
                 self._click_buttons_framingham(sample)
                 
                 try:
-                    WebDriverWait(self.driver, self.wait).until(
+                    WebDriverWait(self.driver, round(self.wait/10, 1)).until(
                         EC.visibility_of_element_located((By.CSS_SELECTOR, "[class*='calc_loading']"))
                     )
 
