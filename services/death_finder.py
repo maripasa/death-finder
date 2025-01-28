@@ -15,7 +15,7 @@ FRAMINGHAM_URL = "https://www.mdcalc.com/calc/38/framingham-risk-score-hard-coro
 CHANGE THE FOLLOWING TABLE TO FIT YOUR DATASET
 """
 
-FRAMINGHAM_INPUTS = {
+""" FRAMINGHAM_INPUTS = {
     "age": "person_age_years",
     "cholesterol": "COLESTEROL_TOTAL",
     "hdl_cholesterol": "HDL",
@@ -34,13 +34,36 @@ FRAMINGHAM_BUTTONS = {
         "alias": "regular_use_of_medication",
         "uppercase_truth_value": "TRUE"
         },
+DEFAULT_MISSING_VALUE = ''
+} """
+
+FRAMINGHAM_INPUTS = {
+    "age": "age",
+    "cholesterol": "totChol",
+    "hdl_cholesterol": "heartRate",
+    "systolic_bp" : "sysBP",
 }
+FRAMINGHAM_BUTTONS = {
+    "sex": {
+        "alias": "male",
+        "uppercase_truth_value": "1"
+        },
+    "smoker": {
+        "alias": "currentSmoker",
+        "uppercase_truth_value": "1"
+        },
+    "blood_pressure": {
+        "alias": "BPMeds",
+        "uppercase_truth_value": "TRUE"
+        },
+}
+DEFAULT_MISSING_VALUE = 'NA'
 
 FRAMINGHAM_VALIDATION_RULES = [
-    lambda line: 30 < float(line["person_age_years"]) < 79,
-    lambda line: 40 < float(line["COLESTEROL_TOTAL"]) < 1000,
-    lambda line: 1 < float(line["HDL"]) < 155,
-    lambda line: 30 < float(line["PRESSAO_ARTERIAL_PAS"]) < 300,
+    lambda line: 30 < float(line[FRAMINGHAM_INPUTS["age"]]) < 79,
+    lambda line: 40 < float(line[FRAMINGHAM_INPUTS["cholesterol"]]) < 1000,
+    lambda line: 1 < float(line[FRAMINGHAM_INPUTS["hdl_cholesterol"]]) < 155,
+    lambda line: 30 < float(line[FRAMINGHAM_INPUTS["systolic_bp"]]) < 300,
 ]
 
 class DeathFinder:
@@ -66,11 +89,14 @@ class DeathFinder:
         """Extracts and validates data from the CSV file for Framingham calculations."""
         validate_csv_path(self.input_path)
         data = read_csv(self.input_path)
-
+        
         processed_data = []
         for line in data:
-            valid = all(line[key] != "" for key in {value for value in FRAMINGHAM_BUTTONS.keys()}
-                        .union({value for value in FRAMINGHAM_INPUTS.keys()})) and \
+            
+            values = {value for value in FRAMINGHAM_INPUTS.values()}.union({
+                FRAMINGHAM_BUTTONS[value]["alias"] for value in FRAMINGHAM_BUTTONS.keys()})
+
+            valid = all(line[key] != DEFAULT_MISSING_VALUE for key in values) and \
                         all(rule(line) for rule in FRAMINGHAM_VALIDATION_RULES
             )
             

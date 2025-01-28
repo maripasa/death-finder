@@ -1,8 +1,9 @@
 # Created by https://www.toptal.com/developers/gitignore/api/python
 # Edit at https://www.toptal.com/developers/gitignore?templates=python
 
-### Selenium ###
+### DeathFinder ###
 *.log
+critical/
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
